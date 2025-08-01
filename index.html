@@ -6,9 +6,10 @@
   
   <!-- Camera video element -->
   <div id="camera-container">
-    <video id="camera-video" autoplay playsinline muted></video>
+    <video id="camera-video" autoplay playsinline muted height="25%"></video>
     <button id="start-camera">Start Camera</button>
     <button id="stop-camera">Stop Camera</button>
+    <button id="ocr-camera">OCR Camera Frame</button>
   </div>
   
   <img id="htmlhandwritten" src="knocknoc2.jpg">
@@ -85,6 +86,7 @@
         const videoElement = document.getElementById('camera-video');
         const startButton = document.getElementById('start-camera');
         const stopButton = document.getElementById('stop-camera');
+        const ocrButton = document.getElementById('ocr-camera');
         let stream = null;
         
         // Start camera function
@@ -127,9 +129,67 @@
           }
         }
         
+        // OCR function for camera video frame
+        async function performOCROnCamera() {
+          if (!stream || !videoElement.srcObject) {
+            updateLog('Please start the camera first');
+            return;
+          }
+          
+          updateLog('Performing OCR on camera frame...');
+          
+          try {
+            // Create a canvas to capture the current video frame
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size to match video dimensions
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            
+            // Draw the current video frame to the canvas
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            // Perform OCR on the canvas
+            const result = await tesseractJs.recognize(
+              canvas,
+              'eng',
+              {
+                logger: m => {
+                  const progressStatus = `Camera OCR: ${m.status} (${(m.progress * 100).toFixed(2)}%)`;
+                  updateLog(progressStatus);
+                }
+              }
+            );
+            
+            // Debug: Log the full result structure
+            console.log('Camera OCR result:', result);
+            
+            const { data: { text, words } } = result;
+            
+            // Display the results
+            updateLog('Camera OCR Complete!');
+            logElement.innerHTML += `<h2>Camera Frame Text:</h2><pre>${text}</pre>`;
+            
+            // Display individual words and their confidence levels (if available)
+            if (words && Array.isArray(words)) {
+              logElement.innerHTML += '<h2>Camera Frame Words:</h2>';
+              const wordList = words.map(w => `<li>${w.text} (Confidence: ${w.confidence.toFixed(2)}%)</li>`).join('');
+              logElement.innerHTML += `<ul>${wordList}</ul>`;
+            } else {
+              logElement.innerHTML += '<p><em>Word-level data not available</em></p>';
+            }
+            
+          } catch (error) {
+            console.error('Camera OCR failed:', error);
+            updateLog(`Camera OCR failed: ${error.message}`);
+          }
+        }
+        
         // Event listeners for camera buttons
         startButton.addEventListener('click', startCamera);
         stopButton.addEventListener('click', stopCamera);
+        ocrButton.addEventListener('click', performOCROnCamera);
         
         // Initially hide the stop button
         stopButton.style.display = 'none';
