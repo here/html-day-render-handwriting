@@ -3,6 +3,14 @@
 <p>Start local server with `python3 -m http.server`</p>
 
   <div id="log"></div>
+  
+  <!-- Camera video element -->
+  <div id="camera-container">
+    <video id="camera-video" autoplay playsinline muted></video>
+    <button id="start-camera">Start Camera</button>
+    <button id="stop-camera">Stop Camera</button>
+  </div>
+  
   <img id="htmlhandwritten" src="knocknoc2.jpg">
   <p>image credit <a href="https://www.johncarr.online/knock-knock-jokes/">johncarr.online/knock-knock-jokes</a></p>
 
@@ -72,6 +80,59 @@
         if (imageElement.complete) {
           performOCR();
         }
+        
+        // Camera functionality
+        const videoElement = document.getElementById('camera-video');
+        const startButton = document.getElementById('start-camera');
+        const stopButton = document.getElementById('stop-camera');
+        let stream = null;
+        
+        // Start camera function
+        async function startCamera() {
+          try {
+            updateLog('Requesting camera permissions...');
+            
+            // Request camera access with specific constraints for mobile
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: 'environment', // Use back camera on mobile
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              },
+              audio: false
+            });
+            
+            // Set the video source
+            videoElement.srcObject = stream;
+            
+            updateLog('Camera started successfully!');
+            startButton.style.display = 'none';
+            stopButton.style.display = 'inline-block';
+            
+          } catch (error) {
+            console.error('Camera access failed:', error);
+            updateLog(`Camera access failed: ${error.message}`);
+          }
+        }
+        
+        // Stop camera function
+        function stopCamera() {
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+            videoElement.srcObject = null;
+            updateLog('Camera stopped');
+            startButton.style.display = 'inline-block';
+            stopButton.style.display = 'none';
+          }
+        }
+        
+        // Event listeners for camera buttons
+        startButton.addEventListener('click', startCamera);
+        stopButton.addEventListener('click', stopCamera);
+        
+        // Initially hide the stop button
+        stopButton.style.display = 'none';
     </script>
 
 </html>
