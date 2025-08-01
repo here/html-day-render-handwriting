@@ -1,0 +1,77 @@
+<html>
+
+<p>Start local server with `python3 -m http.server`</p>
+
+  <div id="log"></div>
+  <img id="htmlhandwritten" src="knocknoc2.jpg">
+  <p>image credit <a href="https://www.johncarr.online/knock-knock-jokes/">johncarr.online/knock-knock-jokes</a></p>
+
+  <!--  <img src="https://herebox.org/wp-content/uploads/2025/07/the-triplets-of-belleville-749x1024.jpg"> -->
+ 
+    <script type="module">
+        import tesseractJs from "https://esm.sh/tesseract.js@6.0.1";
+
+        // Get the image and log elements from the DOM
+        const imageElement = document.getElementById('htmlhandwritten');
+        const logElement = document.getElementById('log');
+        
+        // Function to update the log/status on the page
+        function updateLog(status) {
+          logElement.innerHTML = `<p>${status}</p>`;
+          console.log(status);
+        }
+        
+        // The main OCR function
+        async function performOCR() {
+          updateLog('Recognizing text... This may take a moment.');
+        
+          try {
+            // Recognize text from the image element
+            const result = await tesseractJs.recognize(
+              imageElement,
+              'eng', // Language code (e.g., 'eng' for English)
+              {
+                logger: m => {
+                  // Log progress to the console and update the UI
+                  const progressStatus = `${m.status} (${(m.progress * 100).toFixed(2)}%)`;
+                  updateLog(progressStatus);
+                }
+              }
+            );
+            
+            // Debug: Log the full result structure
+            console.log('Full OCR result:', result);
+            
+            const { data: { text, words } } = result;
+        
+            // Display the full extracted text
+            updateLog('Recognition Complete!');
+            logElement.innerHTML += `<h2>Full Text:</h2><pre>${text}</pre>`;
+        
+            // Display individual words and their confidence levels (if available)
+            if (words && Array.isArray(words)) {
+              logElement.innerHTML += '<h2>Individual Words:</h2>';
+              const wordList = words.map(w => `<li>${w.text} (Confidence: ${w.confidence.toFixed(2)}%)</li>`).join('');
+              logElement.innerHTML += `<ul>${wordList}</ul>`;
+            } else {
+              logElement.innerHTML += '<p><em>Word-level data not available</em></p>';
+            }
+        
+          } catch (error) {
+            console.error('OCR failed:', error);
+            updateLog('Failed to recognize text. See console for details.');
+          }
+        }
+        
+        // Run the OCR function when the image has loaded
+        imageElement.onload = () => {
+          performOCR();
+        };
+        
+        // If the image is already cached/loaded, run it immediately
+        if (imageElement.complete) {
+          performOCR();
+        }
+    </script>
+
+</html>
