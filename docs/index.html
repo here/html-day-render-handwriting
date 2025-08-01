@@ -1,23 +1,32 @@
 <html>
 
-<p>Start local server with `python3 -m http.server`</p>
+  <p>This is a demo for <a href="https://htmlday.com/2025">html day 2025</a> which attempts to read html from a device camera and render it on the web.</p>
 
   <div id="log"></div>
   
   <!-- Camera video element -->
   <div id="camera-container">
-    <video id="camera-video" autoplay playsinline muted height="25%"></video>
     <button id="start-camera">Start Camera</button>
     <button id="stop-camera">Stop Camera</button>
-    <button id="ocr-camera">OCR Camera Frame</button>
+    <button id="ocr-camera">Camera new OCR Frame</button>
+    <br />
+    <video id="camera-video" autoplay playsinline muted height="25%"></video>
     <div id="captured-frame-container">
       <h3>Last Captured Frame:</h3>
       <canvas id="captured-frame" style="border: 2px solid #ccc; max-width: 100%; height: 25%;"></canvas>
     </div>
   </div>
   
-  <img id="htmlhandwritten" src="knocknoc2.jpg">
+  <img height="300px" id="htmlhandwritten" src="knocknoc2.jpg">
   <p>image credit <a href="https://www.johncarr.online/knock-knock-jokes/">johncarr.online/knock-knock-jokes</a></p>
+
+  <p>Code is at<a href="https://github.com/here/html-day-render-handwriting">github/here/html-day-render-handwriting</a></p>
+  <p>Start local server with `python3 -m http.server` and view at http://127.0.0.1:8000/</p>
+  <p>It uses <a href="https://github.com/naptha/tesseract.js">tesseract.js</a> to perform OCR on the camera frame.</p>
+  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia">getUserMedia</a> to access the camera.</p>
+  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API">Canvas API</a> to draw the camera frame and the OCR result.</p>
+  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API">WebRTC API</a> to access the camera.</p>
+  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API">WebRTC API</a> to access the camera.</p>
 
   <!--  <img src="https://herebox.org/wp-content/uploads/2025/07/the-triplets-of-belleville-749x1024.jpg"> -->
  
