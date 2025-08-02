@@ -62,6 +62,12 @@ def main(args: Dict[str, Any]) -> Dict[str, Any]:
 def handle_anthropic_proxy(method: str, path: str, headers: Dict, body: str) -> Dict[str, Any]:
     """Handle Anthropic API proxy requests"""
     try:
+        print(f"Anthropic proxy called with method: {method}, path: {path}")
+        # Log headers without sensitive data
+        safe_headers = {k: v for k, v in headers.items() if k.lower() not in ['authorization', 'x-api-key', 'api-key']}
+        print(f"Headers (filtered): {safe_headers}")
+        print(f"Body length: {len(body) if body else 0} characters")
+        
         # Parse request data
         request_data = json.loads(body) if body else {}
         
@@ -77,6 +83,12 @@ def handle_anthropic_proxy(method: str, path: str, headers: Dict, body: str) -> 
         
         # Remove None values
         proxy_headers = {k: v for k, v in proxy_headers.items() if v is not None}
+        
+        # Log request details without sensitive data
+        print(f"Making request to: {target_url}")
+        safe_proxy_headers = {k: '***' if k.lower() == 'x-api-key' else v for k, v in proxy_headers.items()}
+        print(f"Request headers (filtered): {safe_proxy_headers}")
+        print(f"Request data keys: {list(request_data.keys()) if request_data else 'None'}")
         
         # Make request
         response = requests.post(
@@ -105,6 +117,12 @@ def handle_anthropic_proxy(method: str, path: str, headers: Dict, body: str) -> 
 def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dict[str, Any]:
     """Handle OpenAI API proxy requests"""
     try:
+        print(f"OpenAI proxy called with method: {method}, path: {path}")
+        # Log headers without sensitive data
+        safe_headers = {k: v for k, v in headers.items() if k.lower() not in ['authorization', 'x-api-key', 'api-key']}
+        print(f"Headers (filtered): {safe_headers}")
+        print(f"Body length: {len(body) if body else 0} characters")
+        
         # Parse request data
         request_data = json.loads(body) if body else {}
         
@@ -113,12 +131,17 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
         
         # Get API key from headers or environment variable
         api_key = headers.get("authorization")
+        print(f"API key from headers: {'Present' if api_key else 'None'}")
+        
         if not api_key:
             # Try to get from environment variable
             env_api_key = os.environ.get("openai_api_key")
+            print(f"Environment API key: {'Present' if env_api_key else 'None'}")
             if env_api_key:
                 api_key = f"Bearer {env_api_key}"
+                print("Using environment variable API key")
             else:
+                print("No API key found in headers or environment")
                 return {
                     "statusCode": 400,
                     "headers": {"Content-Type": "application/json"},
@@ -127,6 +150,8 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
                         "type": "missing_key"
                     })
                 }
+        else:
+            print("Using API key from headers")
         
         # Prepare headers
         proxy_headers = {
@@ -135,6 +160,12 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
         }
         
         # Make request
+        print(f"Making request to: {target_url}")
+        # Log request headers without sensitive data
+        safe_proxy_headers = {k: '***' if k.lower() == 'authorization' else v for k, v in proxy_headers.items()}
+        print(f"Request headers (filtered): {safe_proxy_headers}")
+        print(f"Request data keys: {list(request_data.keys()) if request_data else 'None'}")
+        
         response = requests.post(
             target_url,
             json=request_data,
@@ -153,6 +184,10 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
         }
         
     except Exception as e:
+        print(f"OpenAI proxy exception: {str(e)}")
+        print(f"Exception type: {type(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
@@ -165,7 +200,9 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
 def handle_test_anthropic(headers: Dict) -> Dict[str, Any]:
     """Handle Anthropic API test requests"""
     try:
+        print("Anthropic test called")
         api_key = headers.get("x-api-key")
+        print(f"API key: {'Present' if api_key else 'None'}")
         
         if not api_key:
             return {
@@ -226,14 +263,20 @@ def handle_test_anthropic(headers: Dict) -> Dict[str, Any]:
 def handle_test_openai(headers: Dict) -> Dict[str, Any]:
     """Handle OpenAI API test requests"""
     try:
+        print("OpenAI test called")
         # Get API key from headers or environment variable
         api_key = headers.get("authorization")
+        print(f"Header API key: {'Present' if api_key else 'None'}")
+        
         if not api_key:
             # Try to get from environment variable
             env_api_key = os.environ.get("openai_api_key")
+            print(f"Environment API key: {'Present' if env_api_key else 'None'}")
             if env_api_key:
                 api_key = f"Bearer {env_api_key}"
+                print("Using environment variable API key")
             else:
+                print("No API key found")
                 return {
                     "statusCode": 400,
                     "headers": {"Content-Type": "application/json"},
@@ -242,6 +285,8 @@ def handle_test_openai(headers: Dict) -> Dict[str, Any]:
                         "type": "missing_key"
                     })
                 }
+        else:
+            print("Using header API key")
         
         # Simple test request
         test_data = {
