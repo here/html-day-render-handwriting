@@ -1,5 +1,6 @@
 import simplejson as json
 import requests
+import os
 from typing import Dict, Any
 
 def main(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -110,14 +111,28 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
         # Prepare target URL
         target_url = f"https://api.openai.com/v1/{path}"
         
+        # Get API key from headers or environment variable
+        api_key = headers.get("authorization")
+        if not api_key:
+            # Try to get from environment variable
+            env_api_key = os.environ.get("openai_api_key")
+            if env_api_key:
+                api_key = f"Bearer {env_api_key}"
+            else:
+                return {
+                    "statusCode": 400,
+                    "headers": {"Content-Type": "application/json"},
+                    "body": json.dumps({
+                        "error": "No OpenAI API key provided in headers or environment variable 'openai_api_key'",
+                        "type": "missing_key"
+                    })
+                }
+        
         # Prepare headers
         proxy_headers = {
-            "Authorization": headers.get("authorization"),
+            "Authorization": api_key,
             "Content-Type": "application/json"
         }
-        
-        # Remove None values
-        proxy_headers = {k: v for k, v in proxy_headers.items() if v is not None}
         
         # Make request
         response = requests.post(
@@ -127,10 +142,14 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
             timeout=30.0
         )
         
+        # Debug logging
+        print(f"OpenAI response status: {response.status_code}")
+        print(f"OpenAI response text: {response.text[:200]}...")
+        
         return {
             "statusCode": response.status_code,
             "headers": {"Content-Type": "application/json"},
-            "body": response.text
+            "body": response.text if response.text else "{}"
         }
         
     except Exception as e:
@@ -207,17 +226,22 @@ def handle_test_anthropic(headers: Dict) -> Dict[str, Any]:
 def handle_test_openai(headers: Dict) -> Dict[str, Any]:
     """Handle OpenAI API test requests"""
     try:
+        # Get API key from headers or environment variable
         api_key = headers.get("authorization")
-        
         if not api_key:
-            return {
-                "statusCode": 400,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "error": "No API key provided",
-                    "type": "missing_key"
-                })
-            }
+            # Try to get from environment variable
+            env_api_key = os.environ.get("openai_api_key")
+            if env_api_key:
+                api_key = f"Bearer {env_api_key}"
+            else:
+                return {
+                    "statusCode": 400,
+                    "headers": {"Content-Type": "application/json"},
+                    "body": json.dumps({
+                        "error": "No OpenAI API key provided in headers or environment variable 'openai_api_key'",
+                        "type": "missing_key"
+                    })
+                }
         
         # Simple test request
         test_data = {
