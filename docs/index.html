@@ -45,11 +45,10 @@
       <input type="text" id="claude-endpoint" placeholder="https://api.anthropic.com (default)">
       <br>
       <small style="color: #666;">
-        <strong>Note:</strong> Due to CORS restrictions, direct API calls may fail. 
+        <strong>Note:</strong> The app now uses a Digital Ocean Functions proxy to handle CORS issues.
         <br><strong>Recommended:</strong>
         <br>✅ <strong>Tesseract.js</strong> - Works offline, no credits needed, no setup required
-        <br>⚠️ <strong>Claude API</strong> - Requires Anthropic credits, needs proxy server setup
-        <br>For Claude: Run <code>npm install && npm start</code> in the project directory
+        <br>⚠️ <strong>Claude API</strong> - Requires Anthropic credits, uses cloud proxy
         <br><strong>💡 Tip:</strong> If you're getting credit balance errors, Tesseract.js is the best free alternative!
       </small>
     </div>
@@ -181,17 +180,24 @@
                 });
                 return response;
               },
-              // Approach 2: Local proxy server
+              // Approach 2: Digital Ocean Functions proxy
               async () => {
-                updateLog('Trying local proxy server...');
-                const response = await fetch('http://localhost:3001/api/anthropic/v1/messages', {
+                updateLog('Trying Digital Ocean Functions proxy...');
+                const response = await fetch('https://faas-sfo3-7872a1dd.doserverless.co/api/v1/web/fn-00585b33-7c19-4732-b11d-1ca044549063/default/ocr-proxy', {
                   method: 'POST',
                   headers: {
-                    'x-api-key': apiKey,
-                    'anthropic-version': '2023-06-01',
                     'Content-Type': 'application/json'
                   },
-                  body: JSON.stringify(requestBody)
+                  body: JSON.stringify({
+                    method: 'POST',
+                    path: 'messages',
+                    headers: {
+                      'x-api-key': apiKey,
+                      'anthropic-version': '2023-06-01'
+                    },
+                    body: JSON.stringify(requestBody),
+                    api_type: 'anthropic'
+                  })
                 });
                 return response;
               },
@@ -590,38 +596,50 @@
           updateLog('Testing API connection...');
           
           try {
-            const response = await fetch('http://localhost:3001/test-anthropic', {
+            const response = await fetch('https://faas-sfo3-7872a1dd.doserverless.co/api/v1/web/fn-00585b33-7c19-4732-b11d-1ca044549063/default/ocr-proxy', {
               method: 'POST',
               headers: {
-                'x-api-key': apiKey,
                 'Content-Type': 'application/json'
-              }
+              },
+              body: JSON.stringify({
+                method: 'POST',
+                path: 'test-anthropic',
+                headers: {
+                  'x-api-key': apiKey
+                },
+                api_type: 'anthropic'
+              })
             });
             
             const result = await response.json();
             
-            if (result.status === 400 && result.response && result.response.includes('credit balance is too low')) {
-              updateLog('❌ API Test Failed: Insufficient credits');
-              updateLog('Your Anthropic account needs more credits to use the API.');
-              updateLog('');
-              updateLog('Troubleshooting:');
-              updateLog('1. Check your Anthropic billing dashboard');
-              updateLog('2. Credits may take 5-10 minutes to process');
-              updateLog('3. Ensure you added credits to the correct account');
-              updateLog('4. Try refreshing your API key');
-              updateLog('');
-              updateLog('Alternative Solutions:');
-              updateLog('✅ Use Tesseract.js (works offline, no credits needed)');
-              updateLog('🔧 Try a different OCR service');
-              updateLog('⏰ Wait 10 minutes and test again');
-            } else if (result.status === 200) {
-              updateLog('✅ API Test Successful: Your API key is working!');
+            if (result.statusCode === 200) {
+              const body = JSON.parse(result.body);
+              if (body.status === 400 && body.response && body.response.includes('credit balance is too low')) {
+                updateLog('❌ API Test Failed: Insufficient credits');
+                updateLog('Your Anthropic account needs more credits to use the API.');
+                updateLog('');
+                updateLog('Troubleshooting:');
+                updateLog('1. Check your Anthropic billing dashboard');
+                updateLog('2. Credits may take 5-10 minutes to process');
+                updateLog('3. Ensure you added credits to the correct account');
+                updateLog('4. Try refreshing your API key');
+                updateLog('');
+                updateLog('Alternative Solutions:');
+                updateLog('✅ Use Tesseract.js (works offline, no credits needed)');
+                updateLog('🔧 Try a different OCR service');
+                updateLog('⏰ Wait 10 minutes and test again');
+              } else if (body.status === 200) {
+                updateLog('✅ API Test Successful: Your API key is working!');
+              } else {
+                updateLog(`❌ API Test Failed: ${body.status} - ${body.response || body.error}`);
+              }
             } else {
-              updateLog(`❌ API Test Failed: ${result.status} - ${result.response || result.error}`);
+              updateLog(`❌ Proxy Test Failed: ${result.statusCode} - ${result.body}`);
             }
           } catch (error) {
             updateLog(`❌ API Test Failed: ${error.message}`);
-            updateLog('Make sure the proxy server is running (npm start)');
+            updateLog('Make sure the Digital Ocean Functions proxy is accessible');
           }
         }
         
