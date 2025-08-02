@@ -3,9 +3,19 @@
     body {
       text-align: center;
       font-family: Arial, sans-serif;
-      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
+      background: repeating-linear-gradient(in hsl longer hue, rgba(255,0,0,0.1), rgba(0,0,255,0.1) 25px);
+      animation: moveLines 8s linear infinite;
+    }
+    
+    @keyframes moveLines {
+      0% {
+        background-position: 0px 0px;
+      }
+      100% {
+        background-position: 40px 0px;
+      }
     }
     
     .camera-row {
@@ -14,11 +24,43 @@
       align-items: flex-start;
       gap: 20px;
       margin: 20px 0;
+      flex-wrap: wrap;
     }
     
     .camera-section, .frame-section {
       flex: 1;
+      min-width: 300px;
       max-width: 400px;
+    }
+    
+    /* Stack vertically on smaller screens */
+    @media (max-width: 768px) {
+      .camera-row {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .camera-section, .frame-section {
+        min-width: 250px;
+        max-width: 100%;
+      }
+      
+      #camera-video, #captured-frame {
+        width: 100%;
+        max-width: 400px;
+        height: 150px;
+      }
+    }
+    
+    /* Even smaller screens */
+    @media (max-width: 480px) {
+      .camera-section, .frame-section {
+        min-width: 200px;
+      }
+      
+      #camera-video, #captured-frame {
+        height: 120px;
+      }
     }
     
     .camera-section h3, .frame-section h3 {
