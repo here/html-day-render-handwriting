@@ -1,4 +1,9 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hand-written HTML to Text</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/solarized.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
@@ -6,6 +11,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/xml/xml.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/htmlmixed/htmlmixed.min.js"></script>
+</head>
+<body>
   <style>
     body {
       text-align: center;
@@ -198,10 +205,9 @@
   </style>
 
   <h2>hand-written html to text</h2>
-  <p>This demo for <a href="https://htmlday.com/2025">html day 2025</a> attempts to read html from a device camera and render it on the web.</p>
-  <p>Select <a href="https://tesseract.projectnaptha.com/">tesseract.js</a> or OpenAI for <a href="https://en.wikipedia.org/wiki/Optical_character_recognition">optical character recognition (OCR)</a> strategy.
-
-  <p>Code is at <a href="https://github.com/here/html-day-render-handwriting">github/here/html-day-render-handwriting</a></p>
+  <p>This demo for <a href="https://htmlday.com/2025">html day 2025</a> attempts to read html and render it on the web.</p>
+  <p>There are two options for <a href="https://en.wikipedia.org/wiki/Optical_character_recognition">optical character recognition (OCR)</a>.</p>
+  <p>TesseractJS is the default and runs entirely on your local browser, while OpenAI will use an 3rd party AI model.</p>
   
   <!-- Camera and Frame Row -->
   <div class="camera-row">
@@ -231,53 +237,46 @@
         <div id="codemirror-container" style="border: 2px solid #ccc; border-radius: 4px; min-height: 200px;"></div>
       </div>
 
-      <button id="open-text-tab" style="background-color: #28a745; display: none;">Open Text in New Tab</button>
+      <button id="open-text-tab" style="background-color: #28a745;">Open Text in New Tab</button>
+      <button id="update-preview" style="background-color: #007bff;">Update Preview</button>
 
   <!-- OCR Engine Selection -->
   <div id="ocr-engine-selection">
     <h3>Optical character recognition strategy</h3>
     <label>
-      <input type="radio" name="ocr-engine" value="tesseract" checked> Tesseract.js - Runs entirely in your browser
+      <input type="radio" name="ocr-engine" value="tesseract" checked> Tesseract.js - Privately runs in browser with mixed accuracy.
     </label>
     <label>
-      <input type="radio" name="ocr-engine" value="openai"> OpenAI GPT-4 Vision - Sends images to OpenAI to extract text
+      <input type="radio" name="ocr-engine" value="openai"> OpenAI GPT-4 Vision - 3rd party AI with high accuracy.
     </label>
 
-    <div id="openai-config" style="display: none; margin-top: 10px;">
-      <label for="openai-api-key">OpenAI API Key (optional):</label>
-      <input type="password" id="openai-api-key" placeholder="Enter your OpenAI API key">
-      <br>
-      <label for="openai-endpoint">Endpoint URL (optional):</label>
-      <input type="text" id="openai-endpoint" placeholder="https://api.openai.com (default)">
 
-    </div>
 
   </div>
   
       <div style="margin: 30px 0;">
-      <h3>Default Image</h3>
-      <img height="300px" id="htmlhandwritten" src="knocknoc2.jpg" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p>knock knock credit <a href="https://www.johncarr.online/knock-knock-jokes/">johncarr.online/knock-knock-jokes</a></p>
+      <h3>Preview</h3>
+      <iframe id="preview-iframe" width="100%" height="400px" style="border: 2px solid #ccc; border-radius: 8px; background: white; max-width: 800px; margin: 0 auto; display: block;"></iframe>
     </div>
 
 
   <p><a href="https://github.com/naptha/tesseract.js">tesseract.js</a> to perform OCR on the camera frame.</p>
 
-  <!--  <img src="https://herebox.org/wp-content/uploads/2025/07/the-triplets-of-belleville-749x1024.jpg"> -->
+  <p>Code is at <a href="https://github.com/here/html-day-render-handwriting">github/here/html-day-render-handwriting</a></p>
  
     <script type="module">
         import tesseractJs from "https://esm.sh/tesseract.js@6.0.1";
 
-        // Get the image and log elements from the DOM
-        const imageElement = document.getElementById('htmlhandwritten');
+        // Get the log element from the DOM
         const logElement = document.getElementById('log');
+        const previewIframe = document.getElementById('preview-iframe');
         
         // Initialize CodeMirror editor
         let codeMirrorEditor;
         document.addEventListener('DOMContentLoaded', function() {
           codeMirrorEditor = CodeMirror(document.getElementById('codemirror-container'), {
             mode: 'htmlmixed',
-            theme: 'solarized dark',
+            theme: 'solarized light',
             lineNumbers: true,
             autoCloseBrackets: true,
             matchBrackets: true,
@@ -286,7 +285,7 @@
             indentWithTabs: false,
             lineWrapping: true,
             placeholder: 'OCR results will appear here...',
-            value: '',
+            value: '<p>Howdy </p>\n<p>There </p>',
             scrollbarStyle: 'null',
             lineWiseCopyCut: false
           });
@@ -300,9 +299,6 @@
         
         // OCR engine selection elements
         const ocrEngineRadios = document.querySelectorAll('input[name="ocr-engine"]');
-        const openaiConfig = document.getElementById('openai-config');
-        const openaiApiKey = document.getElementById('openai-api-key');
-        const openaiEndpoint = document.getElementById('openai-endpoint');
         
         // Function to get selected OCR engine
         function getSelectedOCREngine() {
@@ -322,14 +318,7 @@
         // Function to update UI based on OCR engine selection
         function updateOCREngineUI() {
           const selectedEngine = getSelectedOCREngine();
-          
-          // Hide all config sections
-          openaiConfig.style.display = 'none';
-          
-          // Show the appropriate config section
-          if (selectedEngine === 'openai') {
-            openaiConfig.style.display = 'block';
-          }
+          // No configuration needed - both engines work without UI configuration
         }
         
         // Event listeners for OCR engine selection
@@ -352,8 +341,6 @@
         
         // OpenAI GPT-4 Vision OCR function
         async function performOpenAIOCR(imageData) {
-          const apiKey = openaiApiKey.value.trim();
-          
           updateLog('Performing OCR with OpenAI GPT-4 Vision...');
           
           const prompt = `Please perform OCR (Optical Character Recognition) on this image and extract all the text content. Return only the extracted text without any additional formatting or explanations.`;
@@ -392,7 +379,7 @@
                 method: 'POST',
                 path: 'chat/completions',
                 headers: {
-                  'authorization': apiKey ? `Bearer ${apiKey}` : null
+                  'authorization': null
                 },
                 body: JSON.stringify(requestBody),
                 api_type: 'openai'
@@ -509,14 +496,7 @@
           
           const selectedEngine = getSelectedOCREngine();
           
-          // Check credentials for AI engines
-          if (selectedEngine === 'openai') {
-            const apiKey = openaiApiKey.value.trim();
-            if (!apiKey) {
-              updateLog('OpenAI selected but API key not configured. Please enter your OpenAI API key, or switch to Tesseract.');
-              return;
-            }
-          }
+
           
           updateLog(`Performing OCR on camera frame using ${selectedEngine}...`);
           
@@ -566,8 +546,9 @@
                   codeMirrorEditor.setValue(text);
                 }
                 
-                // Show the open text tab button
+                // Show the buttons
                 document.getElementById('open-text-tab').style.display = 'inline-block';
+                document.getElementById('update-preview').style.display = 'inline-block';
                 
                 // Display the results
                 updateLog('Camera OpenAI OCR Complete!');
@@ -594,9 +575,6 @@
               if (codeMirrorEditor) {
                 codeMirrorEditor.setValue(text);
               }
-              
-              // Show the open text tab button
-              document.getElementById('open-text-tab').style.display = 'inline-block';
               
               // Display the results
               updateLog('Camera Tesseract OCR Complete!');
@@ -625,33 +603,19 @@
         async function retryOCR() {
           console.log('Retry OCR called');
           
-          // If no lastCapturedFrame, use the default image
-          let imageToProcess;
-          let isDefaultImage = false;
-          
+          // Use the last captured frame (which should be the default image if no camera snapshot taken)
           if (!lastCapturedFrame) {
-            // Use the default image if no camera snapshot has been taken
-            imageToProcess = imageElement;
-            isDefaultImage = true;
-            updateLog('Using default image (knock knock joke) for OCR...');
-            console.log('Using default image:', imageElement);
-          } else {
-            // Use the last captured frame
-            imageToProcess = lastCapturedFrame;
-            updateLog('Using last captured frame for OCR...');
-            console.log('Using last captured frame');
+            updateLog('No captured frame available. Please take a camera snapshot first.');
+            return;
           }
+          
+          const imageToProcess = lastCapturedFrame;
+          updateLog('Using last captured frame for OCR...');
+          console.log('Using last captured frame');
           
           const selectedEngine = getSelectedOCREngine();
           
-          // Check credentials for AI engines
-          if (selectedEngine === 'openai') {
-            const apiKey = openaiApiKey.value.trim();
-            if (!apiKey) {
-              updateLog('OpenAI selected but no API key provided in UI. Trying to use environment variable from Digital Ocean Function...');
-              // Continue without API key - the function will try to use environment variable
-            }
-          }
+
           
           updateLog(`Performing OCR using ${selectedEngine}...`);
           console.log('Selected engine:', selectedEngine);
@@ -659,27 +623,12 @@
           try {
             if (selectedEngine === 'openai') {
               // For OpenAI, we need to convert the image to base64
-              let imageData;
-              if (isDefaultImage) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = imageToProcess.naturalWidth;
-                canvas.height = imageToProcess.naturalHeight;
-                ctx.drawImage(imageToProcess, 0, 0);
-                imageData = canvasToBase64(canvas);
-              } else {
-                imageData = imageToProcess;
-              }
-              
-              const text = await performOpenAIOCR(imageData);
+              const text = await performOpenAIOCR(imageToProcess);
               
               // Store the extracted text in CodeMirror
               if (codeMirrorEditor) {
                 codeMirrorEditor.setValue(text);
               }
-              
-              // Show the open text tab button
-              document.getElementById('open-text-tab').style.display = 'inline-block';
               
               // Display the results
               updateLog('OpenAI OCR Complete!');
@@ -705,9 +654,6 @@
               if (codeMirrorEditor) {
                 codeMirrorEditor.setValue(text);
               }
-              
-              // Show the open text tab button
-              document.getElementById('open-text-tab').style.display = 'inline-block';
               
               // Display the results
               updateLog('Tesseract OCR Complete!');
@@ -758,6 +704,33 @@
           updateLog('✅ Text opened in new tab');
         }
         
+        // Function to update preview iframe
+        function updatePreview() {
+          if (!codeMirrorEditor) {
+            updateLog('CodeMirror editor not initialized yet. Please wait a moment and try again.');
+            return;
+          }
+          
+          const text = codeMirrorEditor.getValue().trim();
+          
+          if (!text) {
+            updateLog('No text available. Please perform OCR first or enter text manually.');
+            return;
+          }
+          
+          try {
+            const iframe = document.getElementById('preview-iframe');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(text);
+            iframeDoc.close();
+            
+            updateLog('✅ Preview updated');
+          } catch (error) {
+            updateLog('❌ Failed to update preview: ' + error.message);
+          }
+        }
+        
 
         
         // Add event listener for retry button
@@ -768,6 +741,10 @@
         const openTextTabButton = document.getElementById('open-text-tab');
         openTextTabButton.addEventListener('click', openTextInNewTab);
         
+        // Add event listener for update preview button
+        const updatePreviewButton = document.getElementById('update-preview');
+        updatePreviewButton.addEventListener('click', updatePreview);
+        
 
         
 
@@ -775,113 +752,62 @@
         // Initially hide the stop button
         stopButton.style.display = 'none';
         
-        // Initialize with default image OCR
+        // Initialize OCR engine UI
+        updateOCREngineUI();
+        
+        // Initialize with default image and text
         async function initializeWithDefaultImage() {
-          updateLog('Setting up default image (knock knock joke) for OCR...');
-          
-          // Ensure Tesseract is selected by default
-          document.querySelector('input[value="tesseract"]').checked = true;
-          updateOCREngineUI();
-          
           try {
-            // Check if image is properly loaded
-            if (!imageElement.complete || imageElement.naturalWidth === 0) {
-              updateLog('Waiting for image to load completely...');
-              await new Promise((resolve) => {
-                imageElement.onload = resolve;
-                imageElement.onerror = () => {
-                  throw new Error('Failed to load default image');
-                };
-              });
-            }
+            // Create an image element to load the default image
+            const defaultImage = new Image();
+            defaultImage.crossOrigin = 'anonymous';
             
-            // Create a canvas to draw the default image
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas size to match the image
-            canvas.width = imageElement.naturalWidth;
-            canvas.height = imageElement.naturalHeight;
-            
-            // Draw the default image to the canvas
-            ctx.drawImage(imageElement, 0, 0);
-            
-            // Store as the last captured frame
-            lastCapturedFrame = canvasToBase64(canvas);
-            
-            // Update the captured frame display to show the default image
-            const displayCanvas = document.getElementById('captured-frame');
-            const displayCtx = displayCanvas.getContext('2d');
-            displayCanvas.width = canvas.width;
-            displayCanvas.height = canvas.height;
-            displayCtx.drawImage(canvas, 0, 0);
-            
-            updateLog('✅ Default image loaded and ready for OCR');
-            updateLog('📸 Current snapshot: Knock knock joke image');
-            updateLog('🔍 Click "Try OCR text recognition" to extract text');
-            
-            // Try to perform initial OCR, but don't fail if there are security issues
-            try {
-              updateLog('Performing OCR on default image using Tesseract.js...');
+            defaultImage.onload = function() {
+              // Create canvas to draw the default image
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
               
-              // Use Tesseract for default image OCR
-              updateLog('Note: Tesseract.js may download language models on first use (this is normal)');
-              const result = await tesseractJs.recognize(
-                canvas,
-                'eng',
-                {
-                  logger: m => {
-                    const progressStatus = `Default Image OCR: ${m.status} (${(m.progress * 100).toFixed(2)}%)`;
-                    updateLog(progressStatus);
-                  }
-                }
-              );
+              // Set canvas size to match the image
+              canvas.width = defaultImage.naturalWidth;
+              canvas.height = defaultImage.naturalHeight;
               
-              const { data: { text, words } } = result;
+              // Draw the default image to the canvas
+              ctx.drawImage(defaultImage, 0, 0);
               
-              // Store the extracted text in CodeMirror
-              if (codeMirrorEditor) {
-                codeMirrorEditor.setValue(text);
-              }
+              // Store as the last captured frame
+              lastCapturedFrame = canvasToBase64(canvas);
               
-              // Show the open text tab button
-              document.getElementById('open-text-tab').style.display = 'inline-block';
+              // Update the captured frame display to show the default image
+              const displayCanvas = document.getElementById('captured-frame');
+              const displayCtx = displayCanvas.getContext('2d');
+              displayCanvas.width = canvas.width;
+              displayCanvas.height = canvas.height;
+              displayCtx.drawImage(canvas, 0, 0);
               
-              updateLog('Default image Tesseract OCR Complete!');
-              
-              // Display individual words and their confidence levels (if available)
-              if (words && Array.isArray(words)) {
-                updateLog(`Individual words detected: ${words.length} words`);
-                words.forEach(word => {
-                  updateLog(`"${word.text}" (confidence: ${(word.confidence * 100).toFixed(2)}%)`);
-                });
-              }
-            } catch (ocrError) {
-              updateLog(`Initial OCR failed: ${ocrError.message}`);
-              updateLog('You can still use the "Try OCR text recognition" button to perform OCR manually.');
-            }
+              updateLog('✅ Default image loaded and ready for OCR');
+              updateLog('📸 Current snapshot: howdy-there-html-day-2025.png');
+              updateLog('🔍 Click "Try OCR text recognition" to extract text');
+            };
+            
+            defaultImage.onerror = function() {
+              updateLog('❌ Failed to load default image');
+            };
+            
+            // Load the default image
+            defaultImage.src = 'howdy-there-html-day-2025.png';
+            
+
+            
           } catch (error) {
-            updateLog(`Default image OCR failed: ${error.message}`);
-            if (error.message.includes('NetworkError')) {
-              updateLog('This may be due to network issues or firewall blocking Tesseract model downloads.');
-              updateLog('Try refreshing the page or check your internet connection.');
-            } else if (error.message.includes('insecure')) {
-              updateLog('This error is likely due to CORS restrictions when loading from a file:// URL.');
-              updateLog('Please serve the page from a web server (e.g., python3 -m http.server) instead of opening the file directly.');
-              updateLog('The OCR will work once the page is served from a proper web server.');
-            }
+            updateLog(`Default image initialization failed: ${error.message}`);
           }
         }
         
-        // Wait for the image to load, then initialize
-        if (imageElement.complete) {
-          initializeWithDefaultImage();
-        } else {
-          imageElement.addEventListener('load', initializeWithDefaultImage);
-        }
+        // Initialize with default image and text
+        initializeWithDefaultImage();
         
         // Initialize OCR engine UI after DOM is ready
         updateOCREngineUI();
-    </script>
-
+          </script>
+  </body>
 </html>
