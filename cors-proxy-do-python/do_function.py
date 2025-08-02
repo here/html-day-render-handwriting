@@ -1,24 +1,13 @@
-import json
-import httpx
+import simplejson as json
+import requests
 from typing import Dict, Any
-
-# Configuration
-ANTHROPIC_API_URL = "https://api.anthropic.com"
-OPENAI_API_URL = "https://api.openai.com"
 
 def main(args: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Digital Ocean Functions entry point
-    
-    Expected args:
-    - method: HTTP method (GET, POST, etc.)
-    - path: Request path
-    - headers: Request headers
-    - body: Request body (for POST requests)
-    - api_type: "anthropic" or "openai"
+    Simplified Digital Ocean Functions entry point using requests
     """
-    
     try:
+        # Get request parameters
         method = args.get("method", "GET")
         path = args.get("path", "")
         headers = args.get("headers", {})
@@ -26,18 +15,22 @@ def main(args: Dict[str, Any]) -> Dict[str, Any]:
         api_type = args.get("api_type", "anthropic")
         
         # Handle health check
-        if path == "/health" or path == "health":
+        if path == "health" or path == "/health":
             return {
                 "statusCode": 200,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({"status": "Proxy server is running", "version": "1.0.0"})
+                "body": json.dumps({
+                    "status": "Proxy server is running", 
+                    "version": "1.0.0",
+                    "message": "Function is working correctly"
+                })
             }
         
         # Handle test endpoints
-        if path == "/test-anthropic" or path == "test-anthropic":
+        if path == "test-anthropic" or path == "/test-anthropic":
             return handle_test_anthropic(headers)
         
-        if path == "/test-openai" or path == "test-openai":
+        if path == "test-openai" or path == "/test-openai":
             return handle_test_openai(headers)
         
         # Handle proxy requests
@@ -49,14 +42,20 @@ def main(args: Dict[str, Any]) -> Dict[str, Any]:
             return {
                 "statusCode": 400,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({"error": "Invalid api_type. Use 'anthropic' or 'openai'"})
+                "body": json.dumps({
+                    "error": "Invalid api_type. Use 'anthropic' or 'openai'",
+                    "received": api_type
+                })
             }
             
     except Exception as e:
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": f"Function error: {str(e)}"})
+            "body": json.dumps({
+                "error": f"Function error: {str(e)}",
+                "type": "exception"
+            })
         }
 
 def handle_anthropic_proxy(method: str, path: str, headers: Dict, body: str) -> Dict[str, Any]:
@@ -66,7 +65,7 @@ def handle_anthropic_proxy(method: str, path: str, headers: Dict, body: str) -> 
         request_data = json.loads(body) if body else {}
         
         # Prepare target URL
-        target_url = f"{ANTHROPIC_API_URL}/v1/{path}"
+        target_url = f"https://api.anthropic.com/v1/{path}"
         
         # Prepare headers
         proxy_headers = {
@@ -79,24 +78,27 @@ def handle_anthropic_proxy(method: str, path: str, headers: Dict, body: str) -> 
         proxy_headers = {k: v for k, v in proxy_headers.items() if v is not None}
         
         # Make request
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                target_url,
-                json=request_data,
-                headers=proxy_headers
-            )
-            
-            return {
-                "statusCode": response.status_code,
-                "headers": {"Content-Type": "application/json"},
-                "body": response.text
-            }
-            
+        response = requests.post(
+            target_url,
+            json=request_data,
+            headers=proxy_headers,
+            timeout=30.0
+        )
+        
+        return {
+            "statusCode": response.status_code,
+            "headers": {"Content-Type": "application/json"},
+            "body": response.text
+        }
+        
     except Exception as e:
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": f"Anthropic proxy error: {str(e)}"})
+            "body": json.dumps({
+                "error": f"Anthropic proxy error: {str(e)}",
+                "type": "anthropic_error"
+            })
         }
 
 def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dict[str, Any]:
@@ -106,7 +108,7 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
         request_data = json.loads(body) if body else {}
         
         # Prepare target URL
-        target_url = f"{OPENAI_API_URL}/v1/{path}"
+        target_url = f"https://api.openai.com/v1/{path}"
         
         # Prepare headers
         proxy_headers = {
@@ -118,24 +120,27 @@ def handle_openai_proxy(method: str, path: str, headers: Dict, body: str) -> Dic
         proxy_headers = {k: v for k, v in proxy_headers.items() if v is not None}
         
         # Make request
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                target_url,
-                json=request_data,
-                headers=proxy_headers
-            )
-            
-            return {
-                "statusCode": response.status_code,
-                "headers": {"Content-Type": "application/json"},
-                "body": response.text
-            }
-            
+        response = requests.post(
+            target_url,
+            json=request_data,
+            headers=proxy_headers,
+            timeout=30.0
+        )
+        
+        return {
+            "statusCode": response.status_code,
+            "headers": {"Content-Type": "application/json"},
+            "body": response.text
+        }
+        
     except Exception as e:
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": f"OpenAI proxy error: {str(e)}"})
+            "body": json.dumps({
+                "error": f"OpenAI proxy error: {str(e)}",
+                "type": "openai_error"
+            })
         }
 
 def handle_test_anthropic(headers: Dict) -> Dict[str, Any]:
@@ -147,7 +152,10 @@ def handle_test_anthropic(headers: Dict) -> Dict[str, Any]:
             return {
                 "statusCode": 400,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({"error": "No API key provided"})
+                "body": json.dumps({
+                    "error": "No API key provided",
+                    "type": "missing_key"
+                })
             }
         
         # Simple test request
@@ -168,28 +176,32 @@ def handle_test_anthropic(headers: Dict) -> Dict[str, Any]:
             "content-type": "application/json"
         }
         
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                f"{ANTHROPIC_API_URL}/v1/messages",
-                json=test_data,
-                headers=proxy_headers
-            )
-            
-            response_text = response.text
-            return {
-                "statusCode": 200,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "status": response.status_code,
-                    "response": response_text[:200] + "..." if len(response_text) > 200 else response_text
-                })
-            }
-            
+        response = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            json=test_data,
+            headers=proxy_headers,
+            timeout=30.0
+        )
+        
+        response_text = response.text
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({
+                "status": response.status_code,
+                "response": response_text[:200] + "..." if len(response_text) > 200 else response_text,
+                "type": "test_success"
+            })
+        }
+        
     except Exception as e:
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": str(e)})
+            "body": json.dumps({
+                "error": str(e),
+                "type": "test_error"
+            })
         }
 
 def handle_test_openai(headers: Dict) -> Dict[str, Any]:
@@ -201,7 +213,10 @@ def handle_test_openai(headers: Dict) -> Dict[str, Any]:
             return {
                 "statusCode": 400,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({"error": "No API key provided"})
+                "body": json.dumps({
+                    "error": "No API key provided",
+                    "type": "missing_key"
+                })
             }
         
         # Simple test request
@@ -221,26 +236,30 @@ def handle_test_openai(headers: Dict) -> Dict[str, Any]:
             "Content-Type": "application/json"
         }
         
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                f"{OPENAI_API_URL}/v1/chat/completions",
-                json=test_data,
-                headers=proxy_headers
-            )
-            
-            response_text = response.text
-            return {
-                "statusCode": 200,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "status": response.status_code,
-                    "response": response_text[:200] + "..." if len(response_text) > 200 else response_text
-                })
-            }
-            
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            json=test_data,
+            headers=proxy_headers,
+            timeout=30.0
+        )
+        
+        response_text = response.text
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({
+                "status": response.status_code,
+                "response": response_text[:200] + "..." if len(response_text) > 200 else response_text,
+                "type": "test_success"
+            })
+        }
+        
     except Exception as e:
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": str(e)})
+            "body": json.dumps({
+                "error": str(e),
+                "type": "test_error"
+            })
         } 
