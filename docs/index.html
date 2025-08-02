@@ -1,4 +1,11 @@
 <html>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/solarized.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/htmlmixed/htmlmixed.min.js"></script>
   <style>
     body {
       text-align: center;
@@ -125,6 +132,56 @@
       border: 1px solid #dee2e6;
     }
     
+    /* CodeMirror customizations */
+    .CodeMirror {
+      height: auto;
+      min-height: 300px;
+      max-height: 600px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      line-height: 1.4;
+      resize: vertical;
+      overflow: hidden;
+      text-align: left;
+    }
+    
+    .CodeMirror-lines {
+      text-align: left;
+    }
+    
+    .CodeMirror-code {
+      text-align: left;
+    }
+    
+    .CodeMirror-scroll {
+      min-height: 300px;
+      max-height: 600px;
+      overflow: hidden;
+    }
+    
+    /* Hide scroll bars */
+    .CodeMirror-scrollbar-filler,
+    .CodeMirror-gutter-filler {
+      display: none;
+    }
+    
+    .CodeMirror-simplescroll-horizontal div,
+    .CodeMirror-simplescroll-vertical div {
+      display: none;
+    }
+    
+    #codemirror-container {
+      max-width: 800px;
+      margin: 0 auto;
+      resize: vertical;
+      overflow: hidden;
+    }
+    
+    #codemirror-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
     input[type="text"], input[type="password"] {
       width: 100%;
       padding: 8px;
@@ -140,8 +197,9 @@
     }
   </style>
 
-  <h1>OCR Text Recognition Demo</h1>
-  <p>This is a demo for <a href="https://htmlday.com/2025">html day 2025</a> which attempts to read html from a device camera and render it on the web.</p>
+  <h2>hand-written html to text</h2>
+  <p>This demo for <a href="https://htmlday.com/2025">html day 2025</a> attempts to read html from a device camera and render it on the web.</p>
+  <p>Select <a href="https://tesseract.projectnaptha.com/">tesseract.js</a> or OpenAI for <a href="https://en.wikipedia.org/wiki/Optical_character_recognition">optical character recognition (OCR)</a> strategy.
 
   <p>Code is at <a href="https://github.com/here/html-day-render-handwriting">github/here/html-day-render-handwriting</a></p>
   
@@ -170,19 +228,19 @@
       
       <div id="text-editor-container" style="margin: 20px 0;">
         <h3>Extracted Text (Editable):</h3>
-        <textarea id="text-editor" rows="12" cols="80" style="width: 100%; max-width: 800px; font-family: monospace; padding: 10px; border: 2px solid #ccc; border-radius: 4px; resize: vertical; min-height: 200px;" placeholder="OCR results will appear here..."></textarea>
+        <div id="codemirror-container" style="border: 2px solid #ccc; border-radius: 4px; min-height: 200px;"></div>
       </div>
 
       <button id="open-text-tab" style="background-color: #28a745; display: none;">Open Text in New Tab</button>
 
   <!-- OCR Engine Selection -->
   <div id="ocr-engine-selection">
-    <h3>OCR Engine:</h3>
+    <h3>Optical character recognition strategy</h3>
     <label>
-      <input type="radio" name="ocr-engine" value="tesseract" checked> Tesseract.js (Local)
+      <input type="radio" name="ocr-engine" value="tesseract" checked> Tesseract.js - Runs entirely in your browser
     </label>
     <label>
-      <input type="radio" name="ocr-engine" value="openai"> OpenAI GPT-4 Vision
+      <input type="radio" name="ocr-engine" value="openai"> OpenAI GPT-4 Vision - Sends images to OpenAI to extract text
     </label>
 
     <div id="openai-config" style="display: none; margin-top: 10px;">
@@ -199,15 +257,11 @@
       <div style="margin: 30px 0;">
       <h3>Default Image</h3>
       <img height="300px" id="htmlhandwritten" src="knocknoc2.jpg" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p>image credit <a href="https://www.johncarr.online/knock-knock-jokes/">johncarr.online/knock-knock-jokes</a></p>
+      <p>knock knock credit <a href="https://www.johncarr.online/knock-knock-jokes/">johncarr.online/knock-knock-jokes</a></p>
     </div>
 
-  <p>Start local server with `python3 -m http.server` and view at http://127.0.0.1:8000/</p>
-  <p>It uses <a href="https://github.com/naptha/tesseract.js">tesseract.js</a> to perform OCR on the camera frame.</p>
-  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia">getUserMedia</a> to access the camera.</p>
-  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API">Canvas API</a> to draw the camera frame and the OCR result.</p>
-  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API">WebRTC API</a> to access the camera.</p>
-  <p>It uses <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API">WebRTC API</a> to access the camera.</p>
+
+  <p><a href="https://github.com/naptha/tesseract.js">tesseract.js</a> to perform OCR on the camera frame.</p>
 
   <!--  <img src="https://herebox.org/wp-content/uploads/2025/07/the-triplets-of-belleville-749x1024.jpg"> -->
  
@@ -217,6 +271,32 @@
         // Get the image and log elements from the DOM
         const imageElement = document.getElementById('htmlhandwritten');
         const logElement = document.getElementById('log');
+        
+        // Initialize CodeMirror editor
+        let codeMirrorEditor;
+        document.addEventListener('DOMContentLoaded', function() {
+          codeMirrorEditor = CodeMirror(document.getElementById('codemirror-container'), {
+            mode: 'htmlmixed',
+            theme: 'solarized dark',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            indentUnit: 2,
+            tabSize: 2,
+            indentWithTabs: false,
+            lineWrapping: true,
+            placeholder: 'OCR results will appear here...',
+            value: '',
+            scrollbarStyle: 'null',
+            lineWiseCopyCut: false
+          });
+          
+          // Set default height to 15 lines (approximately 15 * 1.4 * 14px = 294px)
+          codeMirrorEditor.setSize(null, '294px');
+          
+          // Make the editor resizable
+          codeMirrorEditor.refresh();
+        });
         
         // OCR engine selection elements
         const ocrEngineRadios = document.querySelectorAll('input[name="ocr-engine"]');
@@ -481,9 +561,10 @@
               const imageData = canvasToBase64(canvas);
               const text = await performOpenAIOCR(imageData);
               
-                              // Store the extracted text in the textarea
-                const textEditor = document.getElementById('text-editor');
-                textEditor.value = text;
+                              // Store the extracted text in CodeMirror
+                if (codeMirrorEditor) {
+                  codeMirrorEditor.setValue(text);
+                }
                 
                 // Show the open text tab button
                 document.getElementById('open-text-tab').style.display = 'inline-block';
@@ -509,9 +590,10 @@
               
               const { data: { text, words } } = result;
               
-              // Store the extracted text in the textarea
-              const textEditor = document.getElementById('text-editor');
-              textEditor.value = text;
+              // Store the extracted text in CodeMirror
+              if (codeMirrorEditor) {
+                codeMirrorEditor.setValue(text);
+              }
               
               // Show the open text tab button
               document.getElementById('open-text-tab').style.display = 'inline-block';
@@ -591,9 +673,10 @@
               
               const text = await performOpenAIOCR(imageData);
               
-              // Store the extracted text in the textarea
-              const textEditor = document.getElementById('text-editor');
-              textEditor.value = text;
+              // Store the extracted text in CodeMirror
+              if (codeMirrorEditor) {
+                codeMirrorEditor.setValue(text);
+              }
               
               // Show the open text tab button
               document.getElementById('open-text-tab').style.display = 'inline-block';
@@ -618,9 +701,10 @@
               
               const { data: { text, words } } = result;
               
-              // Store the extracted text in the textarea
-              const textEditor = document.getElementById('text-editor');
-              textEditor.value = text;
+              // Store the extracted text in CodeMirror
+              if (codeMirrorEditor) {
+                codeMirrorEditor.setValue(text);
+              }
               
               // Show the open text tab button
               document.getElementById('open-text-tab').style.display = 'inline-block';
@@ -655,8 +739,12 @@
         
         // Function to open extracted text in new tab
         function openTextInNewTab() {
-          const textEditor = document.getElementById('text-editor');
-          const text = textEditor.value.trim();
+          if (!codeMirrorEditor) {
+            updateLog('CodeMirror editor not initialized yet. Please wait a moment and try again.');
+            return;
+          }
+          
+          const text = codeMirrorEditor.getValue().trim();
           
           if (!text) {
             updateLog('No text available. Please perform OCR first or enter text manually.');
@@ -751,9 +839,10 @@
               
               const { data: { text, words } } = result;
               
-              // Store the extracted text in the textarea
-              const textEditor = document.getElementById('text-editor');
-              textEditor.value = text;
+              // Store the extracted text in CodeMirror
+              if (codeMirrorEditor) {
+                codeMirrorEditor.setValue(text);
+              }
               
               // Show the open text tab button
               document.getElementById('open-text-tab').style.display = 'inline-block';
